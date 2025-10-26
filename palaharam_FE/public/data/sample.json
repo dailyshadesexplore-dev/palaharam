@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Idli",
+    "description": "Soft, fluffy steamed rice cakes served with coconut chutney and sambar. A light and healthy breakfast classic from South India.",
+    "image": "/Images/idli.png"
+  },
+  {
+    "name": "Dosa",
+    "description": "Crispy, golden rice crepe served hot with chutneys and sambar. A perfect blend of crunch and flavor for any meal of the day.",
+    "image": "/Images/dosa.png"
+  },
+  {
+    "name": "Vada",
+    "description": "Crispy lentil fritters with a soft, fluffy inside. Best enjoyed dunked in sambar or paired with fresh coconut chutney.",
+    "image": "/Images/dosa.png"
+  },
+  {
+    "name": "Upma",
+    "description": "Savory semolina porridge cooked with onions, curry leaves, and mild spices. A warm and comforting South Indian breakfast dish.",
+    "image": "/Images/upma.png"
+  },
+  {
+    "name": "Pongal",
+    "description": "Creamy rice and moong dal cooked with ghee, pepper, and cashews. A wholesome dish perfect for mornings or festive occasions.",
+    "image": "/Images/upma.png"
+  }
+]

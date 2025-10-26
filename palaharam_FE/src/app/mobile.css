@@ -1,0 +1,27 @@
+
+
+@media (max-width: 768px) {
+   .menuList{
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: start;
+    gap: 2rem;
+   }
+   .menuItems{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+   }
+   .menuCounter{
+      width: 100%;
+      align-items: flex-start;
+   }
+   .menuCounter h1{
+      text-align: left;
+   }
+   .splashScreenKettle{
+      margin-top: 40% ;
+   }
+}
