@@ -27,3 +27,6 @@ body {
 button{
   cursor: pointer;
 }
+.checkout {
+  scrollbar-width: none;
+}

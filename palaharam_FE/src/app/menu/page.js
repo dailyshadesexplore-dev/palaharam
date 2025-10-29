@@ -44,12 +44,13 @@ const Page = () => {
 
                         {/* cost and quantity*/}
                         <div className='flex flex-col items-end text-center w-1/4 justify-end menuCounter'>
-                            <h1 className='font-bold text-center w-1/2 text-xl'>30rs</h1>
+                            <h1 className='font-bold text-center w-1/2 text-xl'>{index.values}</h1>
                             {/* quantity counter */}
                             <div className='flex items-center   justify-center w-1/2 '>
                                 <button className='w-full rounded bg-green-600' onClick={() => {
                                     setQuatity((prev) => {
                                         const newQuantity = (prev[it] || 0) + 1;
+                                        
 
                                         // update cart using the same newQuantity
                                         setCart((cartPrev) => {
@@ -57,9 +58,11 @@ const Page = () => {
                                             if (existingItemIndex !== -1) {
                                                 const updatedCart = [...cartPrev];
                                                 updatedCart[existingItemIndex].count = newQuantity;
+                                                updatedCart[existingItemIndex].value = index.values * newQuantity;
+
                                                 return updatedCart;
                                             } else {
-                                                return [...cartPrev, { item: index.name, count: newQuantity }];
+                                                return [...cartPrev, { item: index.name, count: newQuantity, value: index.values } ];
                                             }
                                         });
 
