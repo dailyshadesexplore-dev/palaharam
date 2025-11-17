@@ -17,3 +17,17 @@ class OrderDetails(BaseModel):
     OrderDetails :str
     deliveryMode: str
     totalAmount :int
+
+class guest_Address(BaseModel):
+    Delivery_Mode: str
+    Payment_Mode: str
+    First_Name: str
+    Last_Name: str
+    Address_Line: str
+    Mobile_Number: str
+    Email: str
+    Floor_Apt_Number: Optional[str]
+    State: str
+    Zip_Code: str
+    order_Details: object
+    Total_Amount: int

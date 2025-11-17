@@ -1,17 +1,16 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from google.cloud import firestore
 from dotenv import load_dotenv
 import os
 from typing import Optional
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 import json
 from db import models, schema, database
 from sqlalchemy.orm import Session
 
 load_dotenv()
 # Intialize Firestore DB
-db = firestore.Client()
+# db = firestore.Client()
 # create a router instance
 router= APIRouter()
 
@@ -45,11 +44,42 @@ def health_check():
     return {"status": "API is running"}
 
 @router.post("/guest_address")
-def add_address(data: guest_Address):
-    # set the guest collection
-    guest_ref = db.collection("Guest")
-    doc_ref = guest_ref.add(data.model_dump())
-    return {"message": "Address received", "id": doc_ref[1].id}
+def add_address(data: schema.guest_Address, db: Session = Depends(get_db)):
+    try:
+        mobile_val = None
+        if getattr(data, 'Mobile_Number', None) not in (None, ""):
+            try:
+                mobile_val = int(data.Mobile_Number)
+            except Exception:
+                mobile_val = None
+
+        order_details_json = None
+        if getattr(data, 'order_Details', None) is not None:
+            try:
+                order_details_json = json.dumps(data.order_Details)
+            except Exception:
+                order_details_json = None
+
+        db_guest = models.Guest(
+            firstName=data.First_Name,
+            lastName=data.Last_Name,
+            address=data.Address_Line,
+            mobileNumber=mobile_val,
+            email=data.Email,
+            state=data.State,
+            zipCode=data.Zip_Code,
+            orderDetails=order_details_json,
+            deliveryMode=data.Delivery_Mode,
+            Payment_Mode=data.Payment_Mode,
+            totalAmount=getattr(data, 'Total_Amount', None)
+        )
+        db.add(db_guest)
+        db.commit()
+        db.refresh(db_guest)
+        return {"message": "Order placed successfully", "id": db_guest.id}
+    except Exception as e:
+        # Raise HTTPException so client receives 400 with details
+        raise HTTPException(status_code=400, detail={"error": "Failed to create guest record", "detail": str(e)})
 
 @router.post("/users/")
 def create_user(user: schema.UserDetails, db: Session = Depends(get_db)):
@@ -93,10 +123,15 @@ def create_order(order:schema.OrderDetails, db: Session = Depends(get_db)):
 
 @router.post("/PickUp_Orders")
 async def pickup_orders(request: Request):
-        try:
-            body = await request.json()
-            order_ref = db.collection("PickUp_Orders")
+    try:
+        body = await request.json()
+        # Firestore client `db` may not be configured in this repo (commented out above).
+        db_client = globals().get('db')
+        if db_client and hasattr(db_client, 'collection'):
+            order_ref = db_client.collection("PickUp_Orders")
             doc_ref = order_ref.add(body)
             return {"message": "Order received", "id": doc_ref[0].id}
-        except Exception as e:
-            return {"error": str(e)}
+        # Firestore not configured — return the payload for debugging instead
+        return {"message": "Firestore not configured on server", "received": body}
+    except Exception as e:
+        return {"error": str(e)}

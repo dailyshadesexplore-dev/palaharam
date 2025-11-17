@@ -5,8 +5,10 @@ import Image from 'next/image';
 import Form from 'next/form'
 import axios from 'axios';
 import Link from 'next/link';
+import CheckOutFormAct from '../checkOutFormAct/page'
 function Page() {
   const searchParams = useSearchParams()
+  const [checkoutStatus, setCheckoutStatus] = useState('')
   const cart = searchParams.get('cart');
   const cartData = cart ? JSON.parse(decodeURIComponent(cart)) : [];
   const paymentMode = [{
@@ -28,25 +30,45 @@ function Page() {
     'Mobile_Number': '',
     'Email': '',
     'Zip_Code': '',
-    'order_Details': cartData
+    'order_Details': cartData,
+    'totalAmount': cartData?.reduce((total, item) => total + item.value, 0) + 35
+
   });
   const [selectedPayment, setSelectedPayment] = useState(checkoutResults.payment_mode || 'cash');
   const [deliveryMode, setdeliveryMode] = useState(checkoutResults.delivery_mode || 'delivery');
+  const total_amount = cartData?.reduce((total, item) => total + item.value, 0) + 35;
 
-  console.log(cartData)
-  const postAddress = () => {
-    const response = deliveryMode === "delivery" ? axios.post('http://127.0.0.1:8000/guest_address', checkoutResults).then((res) => {
+  const guestSubmit = (e) => {
+      e.preventDefault(); // Prevent form submission refresh
+    const guestObject = {
+        // keys should match the backend Pydantic schema in db/schema.py
+        First_Name: checkoutResults.First_Name,
+        Last_Name: checkoutResults.Last_Name,
+        Address_Line: checkoutResults.Address_Line,
+        Mobile_Number: checkoutResults.Mobile_Number,
+        Email: checkoutResults.Email,
+        Floor_Apt_Number: checkoutResults.Floor_Apt_Number,
+        State: checkoutResults.State,
+        Zip_Code: checkoutResults.Zip_Code,
+        order_Details: checkoutResults.order_Details || cartData,
+        Delivery_Mode: checkoutResults.Delivery_Mode || checkoutResults.delivery_mode,
+        Payment_Mode: checkoutResults.Payment_Mode || checkoutResults.payment_mode,
+        Total_Amount: cartData?.reduce((total, item) => total + item.value, 0) + 35
+    };
+    const response = axios.post('http://127.0.0.1:8000/guest_address', guestObject, { headers: { "Content-Type": "application/json" } }).then((res) => {
       console.log(res.data)
+      setCheckoutStatus(res.data)
     }).catch((err) => {
-      console.error("Error posting address:", err)
-    }) : axios.post('http://127.0.0.1:8000/PickUp_Orders', cartData).then((res) => {
-      console.log(res.data)
-    }).catch((err) => {
-      console.error("Error posting address:", err)
-    })
+      if (err.response && err.response.data) {
+        console.log("Server validation error:", err.response.data);
+      } else {
+        console.log("Error posting address:", err.message || err);
+      }
+    }) 
     return response;
   }
-  const total_amount = cartData?.reduce((total, item) => total + item.value, 0) + 35;
+
+
   return (
     <div>
       <header className='border-b-4 border-gray-200 flex items-center justify-between w-full p-4'>
@@ -94,7 +116,7 @@ function Page() {
             <div className='w-full flex items-center justify-between'>
               <select value={deliveryMode} onChange={(e) => {
                 setdeliveryMode(e.target.value);
-                setCheckoutResults(prev => ({ ...prev, delivery_mode: e.target.value }));
+                setCheckoutResults(prev => ({ ...prev, Delivery_Mode: e.target.value }));
               }} className="border border-black-2 rounded-lg p-2 w-1/4 bg-black text-white" name="delivery_mode" id="delivery_mode">
                 <option value={'delivery'}>Delivery</option>
                 <option value={'pickup'}>PickUp</option>
@@ -110,7 +132,7 @@ function Page() {
                       checked={selectedPayment === it.value}
                       onChange={() => {
                         setSelectedPayment(it.value);
-                        setCheckoutResults(prev => ({ ...prev, payment_mode: it.value }));
+                        setCheckoutResults(prev => ({ ...prev, Payment_Mode: it.value }));
                       }}
                     />
                     <label htmlFor={`payment-${it.value}`}>{it.name}</label>
@@ -121,7 +143,7 @@ function Page() {
             </div>
             <div>
               {deliveryMode === "delivery" ?
-                <Form onSubmit={postAddress} action={'/checkOutFormAct'} className='flex flex-col w-full items-center gap-8 mt-4 font-sans'>
+                <Form className='flex flex-col w-full items-center gap-8 mt-4 font-sans'>
                   <div className='w-full flex gap-4'>
                     <input name="First_Name" placeholder='First Name' value={checkoutResults.First_Name}
                       onChange={(e) => setCheckoutResults(prev => ({ ...prev, First_Name: e.target.value }))}
@@ -130,8 +152,8 @@ function Page() {
                       onChange={(e) => setCheckoutResults(prev => ({ ...prev, Last_Name: e.target.value }))}
                       className='bg-white p-2 w-1/2 h-12 rounded-lg border-none  border-gray-300 border-2 placeholder:text-gray-400 placeholder:text-xl ' />
                   </div>
-                  <input type="text" name="Street_Address" placeholder='Street Address' value={checkoutResults.Street_Address}
-                    onChange={(e) => setCheckoutResults(prev => ({ ...prev, Street_Address: e.target.value }))}
+                  <input type="text" name="Street_Address" placeholder='Street Address' value={checkoutResults.Address_Line || ''}
+                    onChange={(e) => setCheckoutResults(prev => ({ ...prev, Address_Line: e.target.value }))}
                     className='bg-white p-2 w-full h-12 rounded-lg border-none  border-gray-300 border-2 placeholder:text-gray-400 placeholder:text-xl ' />
                   <input name="Phone_Number" placeholder='Phone Number' value={checkoutResults.Mobile_Number}
                     onChange={(e) => setCheckoutResults(prev => ({ ...prev, Mobile_Number: e.target.value }))}
@@ -146,15 +168,15 @@ function Page() {
                     <input name="State" placeholder='State' value={checkoutResults.State}
                       onChange={(e) => setCheckoutResults(prev => ({ ...prev, State: e.target.value }))}
                       className='bg-white p-2 w-1/2 h-12 rounded-lg border-none  border-gray-300 border-2 placeholder:text-gray-400 placeholder:text-xl ' />
-                    <input name="Zip" placeholder='Zip' value={checkoutResults.Zip}
-                      onChange={(e) => setCheckoutResults(prev => ({ ...prev, Zip: e.target.value }))}
+                    <input name="Zip" placeholder='Zip' value={checkoutResults.Zip_Code}
+                      onChange={(e) => setCheckoutResults(prev => ({ ...prev, Zip_Code: e.target.value }))}
                       className='bg-white p-2 w-1/2 h-12 rounded-lg border-none  border-gray-300 border-2 placeholder:text-gray-400 placeholder:text-xl ' />
                   </div>
                   <div className='w-full flex gap-4'>
                     <button className='w-full border-black border-4 rounded-lg h-16'>
                       Cancel
                     </button>
-                    <button type="submit" className='w-full bg-black border-black border-4 rounded-lg h-16 text-white'>
+                    <button type="button" onClick={guestSubmit} className='w-full bg-black border-black border-4 rounded-lg h-16 text-white'>
                       Submit
                     </button>
                   </div>
@@ -180,7 +202,7 @@ function Page() {
                     <button className='w-full border-black border-4 rounded-lg h-16'>
                       Cancel
                     </button>
-                    <button onClick={postAddress} className='w-full bg-black border-black border-4 rounded-lg h-16 text-white'>
+                    <button onClick={guestSubmit} className='w-full bg-black border-black border-4 rounded-lg h-16 text-white'>
                       Confirm the Order
                     </button>
                   </div>
@@ -225,6 +247,11 @@ function Page() {
           </div>
         </div>
       </main>
+      {checkoutStatus.length!==0&&
+        <div className="absolute inset-0 z-50 flex items-center justify-center w-screen h-screen backdrop-blur-md bg-white/30">
+            <CheckOutFormAct message={checkoutStatus}/>
+        </div>
+      }
     </div>
   )
 }
