@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Form from 'next/form'
 import axios from 'axios';
 import Link from 'next/link';
-import CheckOutFormAct from '../checkOutFormAct/page'
+import CheckOutFormAct from '../checkOutFormAct/Page'
 function Page() {
   const searchParams = useSearchParams()
   const [checkoutStatus, setCheckoutStatus] = useState('')
@@ -37,6 +37,7 @@ function Page() {
   const [selectedPayment, setSelectedPayment] = useState(checkoutResults.payment_mode || 'cash');
   const [deliveryMode, setdeliveryMode] = useState(checkoutResults.delivery_mode || 'delivery');
   const total_amount = cartData?.reduce((total, item) => total + item.value, 0) + 35;
+  const API_BASE = process.env.NEXT_PUBLIC_LOCAL_API || 'http://127.0.0.1:8000';
 
   const guestSubmit = (e) => {
       e.preventDefault(); // Prevent form submission refresh
@@ -55,7 +56,7 @@ function Page() {
         Payment_Mode: checkoutResults.Payment_Mode || checkoutResults.payment_mode,
         Total_Amount: cartData?.reduce((total, item) => total + item.value, 0) + 35
     };
-    const response = axios.post('http://127.0.0.1:8000/guest_address', guestObject, { headers: { "Content-Type": "application/json" } }).then((res) => {
+    const response = axios.post(`${API_BASE}/guest_address`, guestObject, { headers: { "Content-Type": "application/json" } }).then((res) => {
       console.log(res.data)
       setCheckoutStatus(res.data)
     }).catch((err) => {

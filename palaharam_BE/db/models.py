@@ -44,3 +44,4 @@ class Guest(Base):
     Payment_Mode = Column(String)
     totalAmount = Column(Integer)
     created_at = Column(DateTime, default=datetime.now())
+

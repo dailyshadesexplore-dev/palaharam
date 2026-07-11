@@ -5,8 +5,15 @@ import os
 from typing import Optional
 from fastapi import FastAPI, Request, HTTPException
 import json
+import base64
 from db import models, schema, database
 from sqlalchemy.orm import Session
+from sqlalchemy import text
+import os
+from email.message import EmailMessage
+from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request as GoogleAuthRequest
+from googleapiclient.discovery import build
 
 load_dotenv()
 # Intialize Firestore DB
@@ -25,19 +32,21 @@ def get_db():
     finally:
         db.close()
 
+GMAIL_SCOPES = ['https://www.googleapis.com/auth/gmail.send']
+TOKEN_FILE = os.path.join(os.path.dirname(__file__), "..", "token.json")
 
-class guest_Address(BaseModel):
-    Delivery_Mode: str
-    Payment_Mode: str
-    First_Name: str
-    Last_Name: str
-    Address_Line: str
-    Mobile_Number: str
-    Email: str
-    Floor_Apt_Number: Optional[str]
-    State: str
-    Zip_Code: str
-    order_Details: Optional[object]
+def gmail_service():
+    if not os.path.exists(TOKEN_FILE):
+        raise RuntimeError(
+            "token.json not found — run gmail_auth_setup.py locally once to authorize this app."
+        )
+    creds = Credentials.from_authorized_user_file(TOKEN_FILE, GMAIL_SCOPES)
+    if creds.expired and creds.refresh_token:
+        creds.refresh(GoogleAuthRequest())
+        with open(TOKEN_FILE, "w") as f:
+            f.write(creds.to_json())
+    service = build('gmail', 'v1', credentials=creds)
+    return service
 
 @router.get("/")
 def health_check():
@@ -76,7 +85,18 @@ def add_address(data: schema.guest_Address, db: Session = Depends(get_db)):
         db.add(db_guest)
         db.commit()
         db.refresh(db_guest)
-        return {"message": "Order placed successfully", "id": db_guest.id}
+        gmailServive = gmail_service()
+        message = EmailMessage()
+        message.set_content(f"Dear {data.First_Name},\n\nThank you for your order! We have received your order and it is being processed. Your order details are as follows:\n\nOrder Details: {data.order_Details}\nTotal Amount: {data.Total_Amount}\n\nWe will notify you once your order is ready for delivery.\n\nThank you for choosing our service!\n\nBest regards,\nPalaharam Team")
+        message['To'] = data.Email
+        message['From'] = "anushkadevg@gmail.com"
+        message['Subject'] = "Order Confirmation - Palaharam"
+        encoded_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')}
+        send_email = gmailServive.users().messages().send(userId="me", body=encoded_message).execute()
+        if send_email:
+            return {"message": "Order placed successfully", "id": send_email["id"]}
+        else:
+            return {"issue with email sending"}
     except Exception as e:
         # Raise HTTPException so client receives 400 with details
         raise HTTPException(status_code=400, detail={"error": "Failed to create guest record", "detail": str(e)})
@@ -121,17 +141,23 @@ def create_order(order:schema.OrderDetails, db: Session = Depends(get_db)):
     db.refresh(db_order)
     return db_order
 
-@router.post("/PickUp_Orders")
-async def pickup_orders(request: Request):
+@router.get("/menu")
+def get_menu(db: Session = Depends(get_db)):
     try:
-        body = await request.json()
-        # Firestore client `db` may not be configured in this repo (commented out above).
-        db_client = globals().get('db')
-        if db_client and hasattr(db_client, 'collection'):
-            order_ref = db_client.collection("PickUp_Orders")
-            doc_ref = order_ref.add(body)
-            return {"message": "Order received", "id": doc_ref[0].id}
-        # Firestore not configured — return the payload for debugging instead
-        return {"message": "Firestore not configured on server", "received": body}
+        getMenuData = db.execute(text('SELECT * FROM Menu')).fetchall()
+        menuList =[]
+        for menu in getMenuData:
+            menuList.append({
+                "id": menu.id,
+                "name": menu.name,
+                "description": menu.description,
+                "price": menu.price,
+                "category": menu.category,
+                "image_url": menu.image_url
+            })
+        if not menuList:
+            return {"message": "No menu items found"}
+        return menuList
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail={"error": "Failed to fetch menu data", "detail": str(e)})
+

@@ -4,13 +4,20 @@ import Image from "next/image";
 import axios from 'axios';
 import '../mobile.css'
 import Link from 'next/link';
+
+const LOCAL_API = process.env.NEXT_PUBLIC_LOCAL_API || 'http://127.0.0.1:8000';
+
 const Page = () => {
     const [menu, setMenu] = useState([])
     const [quantity, setQuatity] = useState({})
     const [cart, setCart] = useState([])
+    
     useEffect(() => {
-        axios.get('data/sample.json')
+        const apiBase = LOCAL_API;
+
+        axios.get(`${apiBase}/menu`)
             .then((it) => {
+                console.log(it)
                 setMenu(it.data)
             })
             .catch((err) => {
@@ -30,7 +37,8 @@ const Page = () => {
                         <div className='flex items-center gap-8 justify-between w-3/4 menuItems'>
                             {/* image */}
                             <Image
-                                src={index.image}
+
+                                src={index.image_url}
                                 width={200}
                                 height={200}
                                 alt="images"
@@ -44,7 +52,7 @@ const Page = () => {
 
                         {/* cost and quantity*/}
                         <div className='flex flex-col items-end text-center w-1/4 justify-end menuCounter'>
-                            <h1 className='font-bold text-center w-1/2 text-xl'>{index.values}</h1>
+                            <h1 className='font-bold text-center w-1/2 text-xl'>{index.price}</h1>
                             {/* quantity counter */}
                             <div className='flex items-center   justify-center w-1/2 '>
                                 <button className='w-full rounded bg-green-600' onClick={() => {
@@ -58,11 +66,11 @@ const Page = () => {
                                             if (existingItemIndex !== -1) {
                                                 const updatedCart = [...cartPrev];
                                                 updatedCart[existingItemIndex].count = newQuantity;
-                                                updatedCart[existingItemIndex].value = index.values * newQuantity;
+                                                updatedCart[existingItemIndex].value = index.price * newQuantity;
 
                                                 return updatedCart;
                                             } else {
-                                                return [...cartPrev, { item: index.name, count: newQuantity, value: index.values } ];
+                                                return [...cartPrev, { item: index.name, count: newQuantity, value: index.price } ];
                                             }
                                         });
 
