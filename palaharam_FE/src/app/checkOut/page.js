@@ -1,12 +1,12 @@
 'use client'
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image';
 import Form from 'next/form'
 import axios from 'axios';
 import Link from 'next/link';
 import CheckOutFormAct from '../checkOutFormAct/page'
-function Page() {
+function CheckoutContent() {
   const searchParams = useSearchParams()
   const [checkoutStatus, setCheckoutStatus] = useState('')
   const cart = searchParams.get('cart');
@@ -280,4 +280,10 @@ function Page() {
   )
 }
 
-export default Page
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutContent />
+    </Suspense>
+  )
+}
