@@ -12,7 +12,8 @@ origins = [
     "http://127.0.0.1:3000",
     "https://myfrontenddomain.com",
     "http://127.0.0.1:8000",
-     "https://palaharam.onrender.com" # Production frontend
+     "https://palaharam.onrender.com",
+    "https://palaharam.netlify.app/" # Production frontend
 ]
 
 
