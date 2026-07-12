@@ -49,7 +49,6 @@ const Page = () => {
         }, 30000)
         return () => clearTimeout(timer)
     }, [cart]);
-    console.log(sessionStorage)
     return (
         <div className='overflow-hidden'>
             <header className='w-screen h-96 bg-gray-900 bg-[url(/Images/menuBanner.png)] bg-cover bg-blend-soft-light flex items-center justify-center'>
