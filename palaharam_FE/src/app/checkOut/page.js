@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Form from 'next/form'
 import axios from 'axios';
 import Link from 'next/link';
-import CheckOutFormAct from '../checkOutFormAct/Page'
+import CheckOutFormAct from '../checkOutFormAct/page'
 function Page() {
   const searchParams = useSearchParams()
   const [checkoutStatus, setCheckoutStatus] = useState('')
