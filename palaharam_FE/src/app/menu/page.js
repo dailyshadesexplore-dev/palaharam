@@ -8,23 +8,48 @@ import Link from 'next/link';
 const LOCAL_API = process.env.NEXT_PUBLIC_LOCAL_API || 'http://127.0.0.1:8000';
 
 const Page = () => {
+    const CART_KEY = "cart_data"
+    const QUANTITY_KEY = "quantity_data"
     const [menu, setMenu] = useState([])
-    const [quantity, setQuatity] = useState({})
-    const [cart, setCart] = useState([])
-    
+    const [quantity, setQuatity] = useState(() => {
+        if (typeof window === 'undefined') return {};
+        const saved = sessionStorage.getItem(QUANTITY_KEY)
+        return saved ? JSON.parse(saved) : {};
+    })
+    const [cart, setCart] = useState(() => {
+        if (typeof window === 'undefined') return [];
+        const saved = sessionStorage.getItem(CART_KEY)
+        const draft = saved ? JSON.parse(saved) : [];
+        return Array.isArray(draft) ? draft : [];
+    })
+
     useEffect(() => {
         const apiBase = LOCAL_API;
-
         axios.get(`${apiBase}/menu`)
             .then((it) => {
-                console.log(it)
                 setMenu(it.data)
             })
             .catch((err) => {
                 console.error("Error fetching menu:", err)
             })
     }, [])
-    console.log(cart)
+    useEffect(() => {
+        sessionStorage.setItem(CART_KEY, JSON.stringify(cart));
+    }, [cart]);
+    useEffect(() => {
+        sessionStorage.setItem(QUANTITY_KEY, JSON.stringify(quantity));
+    }, [quantity]);
+    // Expire the cart 30s after the last change, so a stale cart doesn't linger
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            sessionStorage.removeItem(CART_KEY)
+            sessionStorage.removeItem(QUANTITY_KEY)
+            setCart([])
+            setQuatity({})
+        }, 30000)
+        return () => clearTimeout(timer)
+    }, [cart]);
+    console.log(sessionStorage)
     return (
         <div className='overflow-hidden'>
             <header className='w-screen h-96 bg-gray-900 bg-[url(/Images/menuBanner.png)] bg-cover bg-blend-soft-light flex items-center justify-center'>

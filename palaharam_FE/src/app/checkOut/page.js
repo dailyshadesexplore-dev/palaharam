@@ -39,6 +39,28 @@ function Page() {
   const total_amount = cartData?.reduce((total, item) => total + item.value, 0) + 35;
   const API_BASE = process.env.NEXT_PUBLIC_LOCAL_API || 'http://127.0.0.1:8000';
 
+  const DRAFT_KEY = 'palaharam_checkout_draft';
+
+  // Restore saved form fields (not cart/total — those come fresh from the URL) on mount/refresh
+  useEffect(() => {
+    const saved = sessionStorage.getItem(DRAFT_KEY);
+    if (!saved) return;
+    try {
+      const draft = JSON.parse(saved);
+      setCheckoutResults(prev => ({ ...prev, ...draft }));
+      if (draft.Delivery_Mode) setdeliveryMode(draft.Delivery_Mode);
+      if (draft.Payment_Mode) setSelectedPayment(draft.Payment_Mode);
+    } catch (err) {
+      console.error('Failed to restore checkout draft:', err);
+    }
+  }, []);
+
+  // Persist form fields on every change so a refresh doesn't lose them
+  useEffect(() => {
+    const { order_Details, totalAmount, ...draftFields } = checkoutResults;
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draftFields));
+  }, [checkoutResults]);
+
   const guestSubmit = (e) => {
       e.preventDefault(); // Prevent form submission refresh
     const guestObject = {
@@ -58,6 +80,7 @@ function Page() {
     };
     const response = axios.post(`${API_BASE}/guest_address`, guestObject, { headers: { "Content-Type": "application/json" } }).then((res) => {
       console.log(res.data)
+      sessionStorage.removeItem(DRAFT_KEY);
       setCheckoutStatus(res.data)
     }).catch((err) => {
       if (err.response && err.response.data) {

@@ -3,18 +3,16 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 import os
 from typing import Optional
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import HTTPException
 import json
 import base64
 from db import models, schema, database
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-import os
 from email.message import EmailMessage
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request as GoogleAuthRequest
 from googleapiclient.discovery import build
-
 load_dotenv()
 # Intialize Firestore DB
 # db = firestore.Client()
@@ -93,10 +91,7 @@ def add_address(data: schema.guest_Address, db: Session = Depends(get_db)):
         message['Subject'] = "Order Confirmation - Palaharam"
         encoded_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')}
         send_email = gmailServive.users().messages().send(userId="me", body=encoded_message).execute()
-        if send_email:
-            return {"message": "Order placed successfully", "id": send_email["id"]}
-        else:
-            return {"issue with email sending"}
+        return {"message": "Order placed successfully", "id": send_email["id"]}
     except Exception as e:
         # Raise HTTPException so client receives 400 with details
         raise HTTPException(status_code=400, detail={"error": "Failed to create guest record", "detail": str(e)})
@@ -160,4 +155,3 @@ def get_menu(db: Session = Depends(get_db)):
         return menuList
     except Exception as e:
         raise HTTPException(status_code=500, detail={"error": "Failed to fetch menu data", "detail": str(e)})
-

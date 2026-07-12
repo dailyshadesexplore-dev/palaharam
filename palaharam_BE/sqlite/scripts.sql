@@ -25,16 +25,15 @@ PRAGMA foreign_keys = ON;
 -- ------------------------------------------------------------
 -- Guest orders (frontend checkouts land in this table)
 -- ------------------------------------------------------------
--- SELECT id, firstName, lastName, deliveryMode, Payment_Mode,
---        totalAmount, created_at
--- FROM guests
--- ORDER BY created_at DESC;
+SELECT id, firstName, lastName, deliveryMode, Payment_Mode,
+       totalAmount, created_at
+FROM guests
+ORDER BY created_at DESC;
 
--- -- Cart contents (JSON string) of the most recent guest order
--- SELECT id, orderDetails
--- FROM guests
--- ORDER BY created_at DESC
--- LIMIT 1;
+-- Cart contents (JSON string) of the most recent guest order
+SELECT *
+FROM guests
+ORDER BY created_at DESC
 
 -- ------------------------------------------------------------
 -- Registered users
@@ -116,4 +115,8 @@ INSERT INTO Menu (name, description, price, category, image_url) VALUES
 
 SELECT * FROM Menu;
 
--- DROP TABLE IF EXISTS Menu;
+DROP TABLE IF EXISTS orders;
+
+-- Get all the column names of the guests table
+PRAGMA table_info(guests);
+
